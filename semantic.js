@@ -1,5 +1,3 @@
-// semantic.js – один CSV: сначала слова, затем фразы (2-5 слов) в тех же колонках
-
 window.runSemanticParsing = async function(statusElement, stopFlagObj, getLinks) {
     if (stopFlagObj.value) return;
     const status = statusElement;

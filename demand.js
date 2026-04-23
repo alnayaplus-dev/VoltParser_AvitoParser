@@ -1,4 +1,4 @@
-// demand.js – анализ спроса (открытие wordstat)
+// demand.js – анализ спроса с проверкой авторизации и возможностью сбора через API
 
 function showDemandModal() {
     const existingModal = document.getElementById("voltparser-modal");
@@ -26,7 +26,7 @@ function showDemandModal() {
 
     const header = document.createElement("div");
     header.style.cssText = "padding:15px 20px; background:#f5f5f5; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center;";
-    header.innerHTML = `<h3 style="margin:0;">📈 Анализ спроса по фразам</h3><button id="closeModalBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">✖</button>`;
+    header.innerHTML = `<h3 style="margin:0;">📈 Анализ спроса</h3><button id="closeModalBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">✖</button>`;
     
     const content = document.createElement("div");
     content.style.cssText = "padding:20px; overflow-y:auto; flex:1;";
@@ -46,20 +46,23 @@ function showDemandModal() {
             <label><strong>Шаг 1. Список фраз</strong></label><br>
             <textarea id="demandPhrasesInput" rows="5" style="width:100%; margin-top:5px; padding:8px; font-family:monospace;" placeholder="Введите фразы по одной на строку&#10;или загрузите CSV с колонкой 'phrase' / 'title'"></textarea>
             <div style="margin-top:15px;">
-                <button id="loadPhrasesFromCsvBtn" class="demand-modal-btn" style="background:#2196F3;">📂 Загрузить CSV с фразами</button>
+                <button id="loadPhrasesFromCsvBtn" class="demand-modal-btn" style="background:#2196F3;">📂 Загрузить CSV</button>
+                <button id="checkAuthBtn" class="demand-modal-btn" style="background:#ff8c00;">🔐 Проверить авторизацию</button>
             </div>
         </div>
         <div style="margin-bottom:20px;">
             <label><strong>Шаг 2. Действия с фразами</strong></label><br>
-            <button id="openWordstatAllBtn" class="demand-modal-btn" style="background:#4CAF50;">🔗 Открыть все фразы в Wordstat (avito.ru/analytics/wordstat)</button>
+            <button id="openWordstatAllBtn" class="demand-modal-btn" style="background:#4CAF50;">🔗 Открыть Wordstat (вручную)</button>
+            <button id="autoCollectBtn" class="demand-modal-btn" style="background:#dc3545;">⚡ Автосбор (если настроен API)</button>
             <p style="font-size:12px; color:#666; margin-top:5px;">
-                ⚠️ После открытия вкладки выберите категорию и нажмите «Показать».
+                ⚠️ Автосбор требует предварительной настройки эндпоинта API (в консоли расширения).
             </p>
         </div>
         <div>
-            <label><strong>Список фраз (предпросмотр)</strong></label>
+            <label><strong>Предпросмотр</strong></label>
             <div id="demandPreview" style="border:1px solid #ccc; height:200px; overflow:auto; padding:8px; background:#fafafa; font-family:monospace; font-size:12px;"></div>
         </div>
+        <div id="authStatus" style="margin-top:10px; font-size:12px;"></div>
     `;
 
     const style = document.createElement('style');
@@ -92,25 +95,23 @@ function showDemandModal() {
             margin-left: 8px;
             white-space: nowrap;
         }
-        .open-single-btn:hover {
-            transform: translateY(-1px);
-            background: #e07c00;
-        }
     `;
     document.head.appendChild(style);
+
+    const textarea = document.getElementById("demandPhrasesInput");
+    const previewDiv = document.getElementById("demandPreview");
+    const authStatus = document.getElementById("authStatus");
 
     let currentPhrases = [];
 
     function updatePreview() {
-        const previewDiv = document.getElementById("demandPreview");
-        if (!previewDiv) return;
         if (currentPhrases.length === 0) {
             previewDiv.innerText = "Нет фраз. Загрузите список или введите в поле выше.";
             return;
         }
         previewDiv.innerHTML = `<table border="1" cellpadding="4" style="border-collapse:collapse; width:100%;">
             <tr><th>#</th><th>Фраза</th><th>Действие</th></tr>
-            ${currentPhrases.map((p, idx) => `<tr><td>${idx+1}</td><td>${escapeHtml(p)}</td><td><button class="open-single-btn" data-phrase="${escapeAttr(p)}">🔗 Открыть Wordstat</button></td><tr>`).join('')}
+            ${currentPhrases.map((p, idx) => `<tr><td>${idx+1}</td><td>${escapeHtml(p)}</td><td><button class="open-single-btn" data-phrase="${escapeAttr(p)}">🔗 Открыть Wordstat</button></td></tr>`).join('')}
         </table>`;
         document.querySelectorAll('.open-single-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -122,8 +123,72 @@ function showDemandModal() {
 
     function loadPhrasesFromArray(phrases) {
         currentPhrases = [...new Map(phrases.map(p => [p.trim(), p.trim()])).values()].filter(p => p.length > 0);
-        document.getElementById("demandPhrasesInput").value = currentPhrases.join("\n");
+        textarea.value = currentPhrases.join("\n");
         updatePreview();
+    }
+
+    // Проверка авторизации
+    document.getElementById("checkAuthBtn").onclick = async () => {
+        authStatus.innerText = "⏳ Проверка...";
+        try {
+            const resp = await fetch("https://www.avito.ru/analytics/wordstat", {
+                credentials: "include",
+                headers: { "User-Agent": navigator.userAgent }
+            });
+            if (resp.url.includes("login") || resp.status === 403) {
+                authStatus.innerText = "❌ Не авторизован. Войдите в Avito как продавец.";
+            } else {
+                authStatus.innerText = "✅ Авторизован! Можно использовать Wordstat.";
+            }
+        } catch(e) {
+            authStatus.innerText = "⚠️ Ошибка проверки: " + e.message;
+        }
+    };
+
+    // Массовое открытие вручную
+    document.getElementById("openWordstatAllBtn").onclick = () => {
+        if (currentPhrases.length === 0) { alert("Нет фраз"); return; }
+        for (let phrase of currentPhrases) {
+            window.open(`https://www.avito.ru/analytics/wordstat?q=${encodeURIComponent(phrase)}`, '_blank');
+        }
+    };
+
+    // Автосбор через API (заготовка)
+    document.getElementById("autoCollectBtn").onclick = async () => {
+        if (currentPhrases.length === 0) { alert("Нет фраз"); return; }
+        alert("Автосбор требует настройки API. Откройте консоль (F12) и введите:\n" +
+              "window.wordstatApiEndpoint = 'https://api.avito.ru/analytics/wordstat/v1/...';\n" +
+              "После этого нажмите сюда ещё раз.\n\n" +
+              "Чтобы найти эндпоинт: откройте /analytics/wordstat, в DevTools -> Network, ищите запрос с 'wordstat', скопируйте URL (без параметров).");
+        // если эндпоинт задан вручную в консоли, используем его
+        if (window.wordstatApiEndpoint) {
+            await autoCollectViaAPI();
+        }
+    };
+
+    async function autoCollectViaAPI() {
+        const endpoint = window.wordstatApiEndpoint;
+        if (!endpoint) return;
+        const results = [];
+        for (let i=0; i<currentPhrases.length; i++) {
+            authStatus.innerText = `Сбор: ${i+1}/${currentPhrases.length} ...`;
+            const phrase = currentPhrases[i];
+            try {
+                const url = `${endpoint}?q=${encodeURIComponent(phrase)}&region=...`;
+                const resp = await fetch(url, { credentials: "include" });
+                const data = await resp.json();
+                // Здесь нужно распарсить data в зависимости от структуры ответа
+                results.push({ phrase, data });
+            } catch(e) { results.push({ phrase, error: e.message }); }
+            await randomSleep(1000, 2000);
+        }
+        // выгружаем CSV
+        let csv = "phrase;result\n";
+        for (let r of results) {
+            csv += `"${r.phrase.replace(/"/g, '""')}";${JSON.stringify(r.data || r.error)}\n`;
+        }
+        downloadCSV(csv, "demand_auto.csv");
+        authStatus.innerText = "Готово! Файл demand_auto.csv скачан.";
     }
 
     document.getElementById("loadPhrasesFromCsvBtn").onclick = () => {
@@ -152,16 +217,8 @@ function showDemandModal() {
         input.click();
     };
 
-    document.getElementById("openWordstatAllBtn").onclick = () => {
-        if (currentPhrases.length === 0) { alert("Нет фраз"); return; }
-        for (let phrase of currentPhrases) {
-            window.open(`https://www.avito.ru/analytics/wordstat?q=${encodeURIComponent(phrase)}`, '_blank');
-        }
-    };
-
-    document.getElementById("demandPhrasesInput").addEventListener("input", (e) => {
-        const text = e.target.value;
-        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    textarea.addEventListener("input", (e) => {
+        const lines = e.target.value.split(/\r?\n/).filter(l => l.trim().length > 0);
         currentPhrases = [...new Set(lines)];
         updatePreview();
     });
@@ -177,4 +234,7 @@ function showDemandModal() {
     function escapeAttr(str) {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+    // инициализация
+    textarea.value = "";
 }

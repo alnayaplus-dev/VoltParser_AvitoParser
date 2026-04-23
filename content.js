@@ -1,4 +1,4 @@
-// content.js – панель управления VoltParser
+// content.js – панель управления VoltParser (4 кнопки)
 
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === "togglePanel") {
@@ -33,10 +33,10 @@ function createPanel() {
     });
 
     panel.innerHTML = `
-        <button id="mainBtn">📊 Парсинг статистики</button>
-        <button id="phrasesBtn">📈 Генерация Фраз</button>
+        <button id="mainBtn">📊 Статистика</button>
+        <button id="phrasesBtn">📈 Фразы</button>
         <button id="demandBtn">📈 Анализ спроса</button>
-        <button id="semanticBtn">🔍 Сбор семантики</button>
+        <button id="semanticBtn">🔍 Семантика</button>
         <button id="closePanel" style="background:#999;border-radius:40px;padding:6px 10px;color:white;border:none;cursor:pointer;">✖</button>
         <div id="status" style="margin:0; padding-left:8px; color:#666; font-size:12px; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
     `;
@@ -51,8 +51,8 @@ function createPanel() {
     const status = document.getElementById("status");
 
     closeBtn.onclick = () => panel.remove();
-    phrasesBtn.onclick = () => showPhrasesModal();
-    demandBtn.onclick = () => showDemandModal();
+    phrasesBtn.onclick = () => showPhrasesModal();   // из phrases.js
+    demandBtn.onclick = () => showDemandModal();     // из demand.js
 
     const styleBtn = (btn, bgColor, hoverColor) => {
         Object.assign(btn.style, {
@@ -91,7 +91,7 @@ function createPanel() {
             .filter((v, i, arr) => arr.indexOf(v) === i);
     };
 
-    // СТАТИСТИКА
+    // СТАТИСТИКА (без изменений, как у вас)
     mainBtn.onclick = async () => {
         if (mainBtn.dataset.mode === "stop") {
             stopStats = true;
@@ -110,7 +110,7 @@ function createPanel() {
         const links = getLinks();
         if (links.length === 0) {
             status.textContent = "❌ Нет ссылок на странице";
-            resetBtn(mainBtn, "📊 Парсинг статистики", "#4CAF50");
+            resetBtn(mainBtn, "📊 Статистика", "#4CAF50");
             return;
         }
 
@@ -171,8 +171,8 @@ function createPanel() {
             csv += [safe(r.title), safe(r.description), safe(r.viewsTotal), safe(r.viewsToday), safe(r.category), safe(r.url)].join(";") + "\n";
         });
         downloadCSV(csv, "stats_full.csv");
-        resetBtn(mainBtn, "📊 Парсинг статистики", "#4CAF50");
-        status.textContent = `✅ Собрано ${rows.length} записей.`;
+        resetBtn(mainBtn, "📊 Статистика", "#4CAF50");
+        status.textContent = `✅ Готово! Собрано ${rows.length} записей.`;
         stopStats = false;
     };
 
@@ -190,7 +190,7 @@ function createPanel() {
 
         await window.runSemanticParsing(status, stopSemanticFlag, getLinks);
 
-        resetBtn(semanticBtn, "🔍 Сбор семантики", "#DC2780");
+        resetBtn(semanticBtn, "🔍 Семантика", "#DC2780");
     };
 
     function resetBtn(btn, text, color) {

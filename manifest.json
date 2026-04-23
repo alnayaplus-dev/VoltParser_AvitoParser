@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VoltParser",
-  "version": "0.9",
+  "version": "0.94",
   "description": "Парсинг статистики, фраз и семантики прямо на Avito",
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["https://www.avito.ru/*"],
@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.avito.ru/*"],
-      "js": ["utils.js", "phrases.js", "demand.js", "semantic.js", "content.js"],
+      "js": ["utils.js", "demand.js", "semantic.js", "content.js"],
       "run_at": "document_end"
     }
   ]
