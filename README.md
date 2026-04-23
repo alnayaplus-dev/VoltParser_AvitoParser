@@ -1,3 +1,5 @@
+### 🚀 VoltParser
+
 VoltParser — это браузерное расширение (Chrome / Edge) для **парсинга данных с Avito** прямо со страниц сайта. Оно не использует внешние прокси и работает из вашего браузера, имитируя действия реального пользователя. Расширение состоит из нескольких модулей, каждый из которых отвечает за свой режим сбора данных.
 
 ---
@@ -152,13 +154,9 @@ word_title;freq_title;word_desc;freq_desc
 
 1. Скачайте папку с расширением (все файлы: `manifest.json`, `background.js`, `utils.js`, `phrases.js`, `demand.js`, `semantic.js`, `content.js`, иконка `icon1024.png`).
 2. В Chrome перейдите на `chrome://extensions/`, включите **«Режим разработчика»**.
-    
-    ![1.png](attachment:26032973-8ed0-4013-b2c7-2f2587d67ea9:1.png)
-    
+<img width="1908" height="870" alt="image" src="https://github.com/user-attachments/assets/98d41bc5-728c-4ebb-b442-f2c8b448b8b1" />
 3. Разархивируйте .ZIP файл, нажмите **«Загрузить распакованное»** и выберите разархивированную папку
-    
-    ![Screenshot.png](attachment:90d91c2b-f664-4afd-9ee7-e91b8d461f11:Screenshot.png)
-    
+<img width="1906" height="867" alt="image" src="https://github.com/user-attachments/assets/4f8d5072-61fb-41b2-be72-866b96a0da6c" />
 4. После установки нажмите на иконку расширения на любой странице `avito.ru` (список объявлений).
 5. Появится панель с кнопками:
     - **📊 Статистика** — запускает сбор полных данных.
