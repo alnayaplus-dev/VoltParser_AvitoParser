@@ -17,7 +17,8 @@
   "content_scripts": [
     {
       "matches": ["https://www.avito.ru/*"],
-      "js": ["content.js"]
+      "js": ["utils.js", "phrases.js", "demand.js", "semantic.js", "content.js"],
+      "run_at": "document_end"
     }
   ]
 }
